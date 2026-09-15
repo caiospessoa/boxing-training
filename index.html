@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Treinos</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14161a; --bg-raised:#1d2025; --line:#2a2e35;
+    --ink:#eef0f3; --ink-dim:#9aa0ab; --amber:#ff8a2b; --teal:#35c6a6;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:'Inter',system-ui,sans-serif; min-height:100vh;}
+  #app{max-width:480px; margin:0 auto; padding:max(32px, env(safe-area-inset-top)) 20px 32px;}
+  h1{font-family:'Barlow Condensed'; font-size:32px; font-weight:700; margin:0 0 6px;}
+  .sub{color:var(--ink-dim); font-size:14px; margin-bottom:28px;}
+  a.card{
+    display:block; background:var(--bg-raised); border:1px solid var(--line); border-radius:16px;
+    padding:20px; margin-bottom:14px; text-decoration:none; color:var(--ink);
+  }
+  a.card .tag{font-size:12px; color:var(--amber); font-weight:600; text-transform:uppercase; letter-spacing:0.04em;}
+  a.card.mas .tag{color:var(--teal);}
+  a.card .title{font-family:'Barlow Condensed'; font-size:24px; font-weight:700; margin-top:2px;}
+  a.card .desc{font-size:13px; color:var(--ink-dim); margin-top:4px;}
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>Treinos</h1>
+  <div class="sub">Escolhe o de hoje.</div>
+
+  <a class="card" href="treino-a.html">
+    <div class="tag">Segunda</div>
+    <div class="title">Treino A</div>
+    <div class="desc">100 repetições — empurrar inferior / puxar superior</div>
+  </a>
+
+  <a class="card" href="treino-b.html">
+    <div class="tag">Quinta</div>
+    <div class="title">Treino B</div>
+    <div class="desc">100 repetições — puxar inferior / empurrar superior</div>
+  </a>
+
+  <a class="card mas" href="treino-mas.html">
+    <div class="tag">Terça · Sexta</div>
+    <div class="title">MAS</div>
+    <div class="desc">Maximal Aerobic Speed — protocolo 30/30</div>
+  </a>
+</div>
+</body>
+</html>
