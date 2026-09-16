@@ -1,43 +1,57 @@
-A personal workout app — because the "Personal Digital" interface had every chance to be good and isn't.
+# 🐯 Treinos
 
-Three workouts, one full screen, zero ads, zero login, zero drama. Open, tap, train.
+App de treino pessoal — porque a interface do "Personal Digital" tinha tudo pra ser boa e não é.
 
-## What's in here
+Três treinos, uma tela cheia, zero anúncio, zero login, zero drama. Abre, toca, treina.
 
-| Workout | When | What |
+## O que tem aqui
+
+| Treino | Quando | O quê |
 |---|---|---|
-| 🅰️ **Treino A** | 100 reps — lower push / upper pull |
-| 🅱️ **Treino B** | 100 reps — lower pull / upper push |
-| 🔥 **MAS** | Maximal Aerobic Speed — 30/30 protocol |
+| 🅰️ **Treino A** | Segunda | 100 repetições — empurrar inferior / puxar superior |
+| 🅱️ **Treino B** | Quinta | 100 repetições — puxar inferior / empurrar superior |
+| 🔥 **MAS** | Terça e sexta | Maximal Aerobic Speed — protocolo 30/30 |
 
-Each workout follows the same 3-4 block logic:
+Cada treino segue a mesma lógica de 3-4 blocos:
 
-1. **Movement prep** — mobility and activation, done once, no forced rest.
-2. **Main set** — the real circuit, timed, with adjustable laps.
-3. **Accessories/power** — finisher work, traditional strength or plyometrics.
+1. **Preparação de movimento** — mobilidade e ativação, feito uma vez só, sem descanso forçado.
+2. **Parte principal** — o circuito de verdade, cronometrado, com voltas ajustáveis.
+3. **Acessórios / potência** — fechamento, força tradicional ou pliometria.
 
-## Why it exists
+## Por que existe
 
-Because trying to figure out "wait, how many sets again?" mid-workout, sweaty phone in hand, inside an app full of videos that need to load, sucks. This one:
+Porque ficar catando "quantas séries mesmo?" no meio do treino, com a mão suada no celular, dentro de um app cheio de vídeo pra carregar, é osso. Isso aqui:
 
-- Shows a **photo of each exercise** right on screen (pulled straight from the trainer's original PDF)
-- Has a **built-in timer**, with a 3-2-1 beep and vibration
-- Shows the **next exercise** during rest, so you never lose the timing
-- **Saves your progress automatically** — if your screen locks or a call interrupts mid-workout, it reopens right where you left off
-- Works **100% offline** after the first load
-- Zero frameworks, zero build step, zero dependency on the internet to run
+- Tem **foto de cada exercício** direto na tela (puxadas do PDF original do personal)
+- **Cronômetro embutido**, com beep nos 3-2-1 e vibração
+- Mostra o **próximo exercício** já durante o descanso, pra você não perder o timing
+- **Salva seu progresso sozinho** — se a tela travar ou o zap chamar no meio do treino, reabre e continua de onde parou
+- Funciona **100% offline** depois do primeiro carregamento
+- Zero framework, zero build step, zero dependência de internet pra rodar
 
-## How to use it
+## Como usar
 
-Open [`index.html`](./index.html), pick today's workout, go.
+Abre o [`index.html`](./index.html), escolhe o treino do dia, bora.
 
-On mobile: add it to your home screen (Share → Add to Home Screen) and it opens full-screen, no browser bar, like a real app.
+No celular: adiciona à tela inicial (Compartilhar → Adicionar à Tela de Início) e ele abre em tela cheia, sem barra de navegador, como se fosse um app de verdade.
 
-## How it's built
+## Como é feito
 
-- Plain HTML + CSS + JS, one file per workout, no build process
-- Photos embedded as base64 directly in the HTML (that's why the files aren't tiny, but they load instantly and don't depend on an image server)
-- Progress saved in `localStorage`
-- Design built to be read fast with the blurry vision of someone mid-set
+- HTML + CSS + JS puro, um arquivo por treino, nada de build
+- Fotos embutidas como base64 direto no HTML (por isso os arquivos não são pequenos, mas carregam instantâneo e não dependem de servidor de imagem)
+- Progresso salvo em `localStorage`
+- Design pensado pra ser lido rápido com a visão embaçada de quem tá no meio de uma série
 
-## Structure
+## Estrutura
+
+```
+.
+├── index.html        # tela inicial, escolhe o treino
+├── treino-a.html      
+├── treino-b.html      
+└── treino-mas.html   
+```
+
+---
+
+*Baseado no plano do personal trainer. Feito porque nenhum app comercial resolve o problema de "eu só quero ver o próximo exercício rápido".*

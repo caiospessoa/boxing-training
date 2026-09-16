@@ -77,6 +77,7 @@
   .stage{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; gap:14px; padding:8px 0 4px; overflow-y:auto; min-height:0;}
   .photo-wrap{width:100%; max-width:250px; border-radius:16px; overflow:hidden; border:1px solid var(--line); background:var(--bg-sunken); flex-shrink:0;}
   .photo-wrap img{width:100%; display:block; object-fit:cover; max-height:210px;}
+  .photo-wrap video{width:100%; display:block; object-fit:cover; max-height:210px;}
   .photo-wrap.preview{max-width:130px; opacity:0.65;}
   .photo-wrap.preview img{max-height:110px;}
   .photo-caption{font-size:11px; color:var(--ink-faint); margin-top:6px;}
@@ -153,8 +154,8 @@
       </div>
       <div class="plan-row">
         <div>
-          <div class="name">Ativação — CORE e equilíbrio</div>
-          <div class="count">circuito de 3 exercícios, sem descanso obrigatório</div>
+          <div class="name">Ativação e potência</div>
+          <div class="count">circuito de 6 exercícios em cadeia, sem descanso obrigatório</div>
         </div>
         <div class="stepper">
           <button data-c="1" data-d="-1">–</button>
@@ -164,24 +165,13 @@
       </div>
       <div class="plan-row">
         <div>
-          <div class="name">Potência — pliometria</div>
-          <div class="count">circuito de 3 exercícios, sem descanso obrigatório</div>
-        </div>
-        <div class="stepper">
-          <button data-c="2" data-d="-1">–</button>
-          <div class="val" id="lapsC">2</div>
-          <button data-c="2" data-d="1">+</button>
-        </div>
-      </div>
-      <div class="plan-row">
-        <div>
           <div class="name">MAS — tiro / air bike / remo</div>
           <div class="count">30s ação / 30s descanso, 5 rounds cada, 2 passagens</div>
         </div>
         <div class="stepper">
-          <button data-c="3" data-d="-1">–</button>
+          <button data-c="2" data-d="-1">–</button>
           <div class="val" id="lapsD">2</div>
-          <button data-c="3" data-d="1">+</button>
+          <button data-c="2" data-d="1">+</button>
         </div>
       </div>
     </div>
@@ -211,6 +201,7 @@
       <div class="conjugado" id="conjugado"></div>
 
       <div class="photo-wrap" id="photoWrap" style="display:none">
+        <video id="exVideo" autoplay muted loop playsinline style="display:none"></video>
         <img id="exPhoto" src="" alt="">
       </div>
       <div class="photo-caption" id="photoCaption" style="display:none"></div>
@@ -265,19 +256,17 @@ const CIRCUITS = [
     {name:'Cadeia posterior 2', mode:'time', value:30, velocidade:'Isométrico', descanso:1, next:'Cadeia posterior 3', img:2, obs:''},
     {name:'Cadeia posterior 3', mode:'time', value:30, velocidade:'Isométrico', descanso:1, next:'Good morning com extensão de cotovelos', img:3, obs:''},
   ]},
-  { key:'B', name:'Ativação — CORE e equilíbrio', defaultLaps:2, exercises:[
-    {name:'Good morning com extensão de cotovelos', mode:'reps', value:'10', velocidade:'Lento', descanso:1, next:'Propriocepção — good morning unipodal', img:4,
+  { key:'B', name:'Ativação e potência', defaultLaps:2, exercises:[
+    {name:'Good morning com extensão de cotovelos', mode:'reps', value:'10', velocidade:'Lento', descanso:1, next:'Propriocepção — good morning unipodal', img:4, video:'videos/mas-good-morning.mp4',
       obs:'Joelhos semi-flexionados e lombar "funda". Não desça o tronco à frente — recue a pelve.'},
-    {name:'Propriocepção — good morning unipodal', mode:'reps', value:'5 (cada lado)', velocidade:'Lento', descanso:1, next:'Prancha com remada', img:5,
+    {name:'Propriocepção — good morning unipodal', mode:'reps', value:'5 (cada lado)', velocidade:'Lento', descanso:1, next:'Prancha com remada', img:5, video:'videos/mas-propriocepcao-unipodal.mp4',
       obs:'Elevar bem a perna suspensa atrás e não encostar mais no chão.'},
-    {name:'Prancha com remada', mode:'reps', value:'10 (cada lado)', velocidade:'Moderado', descanso:1, next:'Good morning com extensão de cotovelos', img:6, obs:''},
-  ]},
-  { key:'C', name:'Potência — pliometria', defaultLaps:2, exercises:[
+    {name:'Prancha com remada', mode:'reps', value:'10 (cada lado)', velocidade:'Moderado', descanso:1, next:'Pliometria — marcha 1, 2 e 3', img:6, obs:''},
     {name:'Pliometria — marcha 1, 2 e 3', mode:'time', value:30, velocidade:'Moderado', descanso:1, next:'Salto e aterrissagem bipodal', img:7,
       obs:'Ponta do pé no chão, outra perna elevada. Marchar trocando os pés, contando 1, 2 e 3.'},
     {name:'Salto e aterrissagem bipodal', mode:'time', value:30, velocidade:'Moderado', descanso:1, next:'Aceleração — tração com elástico', img:8,
       obs:'Salto curto, aterrissagem firme com os dois pés no chão, braços para trás como arremessando uma bola.'},
-    {name:'Aceleração — tração com elástico', mode:'time', value:30, velocidade:'Rápido', descanso:1, next:'Pliometria — marcha 1, 2 e 3', img:9,
+    {name:'Aceleração — tração com elástico', mode:'time', value:30, velocidade:'Rápido', descanso:1, next:'Good morning com extensão de cotovelos', img:9, video:'videos/mas-aceleracao-elastico.mp4',
       obs:'Manter a tração e o corpo inclinado à frente — acelerar correndo no lugar ou se deslocando.'},
   ]},
   { key:'D', name:'MAS — protocolo 30/30', defaultLaps:2, exercises:[
@@ -341,8 +330,7 @@ function beep(freq=880, dur=0.12){
 function refreshLapsUI(){
   document.getElementById('lapsA').textContent = laps[0];
   document.getElementById('lapsB').textContent = laps[1];
-  document.getElementById('lapsC').textContent = laps[2];
-  document.getElementById('lapsD').textContent = laps[3];
+  document.getElementById('lapsD').textContent = laps[2];
 }
 document.querySelectorAll('.stepper button').forEach(btn=>{
   btn.addEventListener('click', ()=>{
@@ -419,12 +407,16 @@ function renderStep(){
   const mainBtn = document.getElementById('mainBtn');
   const photoWrap = document.getElementById('photoWrap');
   const exPhoto = document.getElementById('exPhoto');
+  const exVideo = document.getElementById('exVideo');
   const photoCaption = document.getElementById('photoCaption');
   mainBtn.classList.remove('rest-btn');
   photoWrap.classList.remove('preview');
   photoCaption.style.display = 'none';
 
   if(s.phase === 'rest'){
+    exVideo.pause();
+    exVideo.style.display = 'none';
+    exPhoto.style.display = 'block';
     document.getElementById('phaseTag').textContent = 'DESCANSO';
     document.getElementById('exName').textContent = 'Respira';
     const nextStep = steps[stepIdx+1];
@@ -454,8 +446,24 @@ function renderStep(){
     if(s.ex.obs){ obsBox.style.display = 'block'; obsBox.innerHTML = '<b>Técnica:</b> ' + s.ex.obs; }
     else { obsBox.style.display = 'none'; }
 
-    if(s.ex.img && EX_IMAGES[s.ex.img]){
+    exVideo.pause();
+    exVideo.removeAttribute('src');
+    exVideo.style.display = 'none';
+    exPhoto.style.display = 'none';
+    if(s.ex.video){
+      exVideo.src = s.ex.video;
+      exVideo.poster = (s.ex.img && EX_IMAGES[s.ex.img]) ? EX_IMAGES[s.ex.img] : '';
+      exVideo.style.display = 'block';
+      exVideo.load();
+      exVideo.play().catch(()=>{});
+      exVideo.onerror = () => {
+        exVideo.style.display = 'none';
+        if(s.ex.img && EX_IMAGES[s.ex.img]){ exPhoto.src = EX_IMAGES[s.ex.img]; exPhoto.style.display = 'block'; }
+      };
+      photoWrap.style.display = 'block';
+    } else if(s.ex.img && EX_IMAGES[s.ex.img]){
       exPhoto.src = EX_IMAGES[s.ex.img];
+      exPhoto.style.display = 'block';
       photoWrap.style.display = 'block';
     } else {
       photoWrap.style.display = 'none';

@@ -44,7 +44,10 @@
   .rule-card p:last-child{margin-bottom:0;}
   .rule-card b{color:var(--ink); font-weight:600;}
   .plan{display:flex; flex-direction:column; gap:10px;}
-  .plan-row{display:flex; align-items:center; justify-content:space-between; background:var(--bg-raised); border:1px solid var(--line); border-radius:14px; padding:14px 16px;}
+  .plan-row{display:flex; align-items:center; justify-content:space-between; background:var(--bg-raised); border:1px solid var(--line); border-radius:14px; padding:14px 16px; gap:10px;}
+  .mode-toggle{display:flex; gap:6px; margin-top:10px;}
+  .mode-btn{flex:1; background:var(--bg-sunken); border:1px solid var(--line); color:var(--ink-dim); font-size:12px; font-weight:600; padding:8px 10px; border-radius:9px;}
+  .mode-btn.active{background:var(--amber); color:#1a1200; border-color:var(--amber);}
   .plan-row .name{font-size:15px; font-weight:600;}
   .plan-row .count{font-size:13px; color:var(--ink-dim); margin-top:2px;}
   .stepper{display:flex; align-items:center; gap:12px;}
@@ -77,6 +80,7 @@
   .stage{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; gap:14px; padding:8px 0 4px; overflow-y:auto; min-height:0;}
   .photo-wrap{width:100%; max-width:250px; border-radius:16px; overflow:hidden; border:1px solid var(--line); background:var(--bg-sunken); flex-shrink:0;}
   .photo-wrap img{width:100%; display:block; object-fit:cover; max-height:210px;}
+  .photo-wrap video{width:100%; display:block; object-fit:cover; max-height:210px;}
   .photo-wrap.preview{max-width:130px; opacity:0.65;}
   .photo-wrap.preview img{max-height:110px;}
   .photo-caption{font-size:11px; color:var(--ink-faint); margin-top:6px;}
@@ -151,12 +155,16 @@
           <button data-c="0" data-d="1">+</button>
         </div>
       </div>
-      <div class="plan-row">
-        <div>
+      <div class="plan-row" id="mainBlockRow">
+        <div style="width:100%">
           <div class="name">Parte principal — agachamento / remada / prancha</div>
-          <div class="count">circuito de 3 exercícios, 40s trabalho / 40s descanso</div>
+          <div class="count" id="mainBlockDesc">circuito de 3 exercícios, 40s trabalho / 40s descanso</div>
+          <div class="mode-toggle" id="mainModeToggle">
+            <button class="mode-btn active" data-mode="circuit">Circuito</button>
+            <button class="mode-btn" data-mode="isolated">Isolado</button>
+          </div>
         </div>
-        <div class="stepper">
+        <div class="stepper" id="mainStepper">
           <button data-c="1" data-d="-1">–</button>
           <div class="val" id="lapsB">10</div>
           <button data-c="1" data-d="1">+</button>
@@ -189,7 +197,7 @@
     </div>
     <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
     <div class="meta-line">
-      <span class="lap-badge">Volta <b id="lapNow">1</b>/<span id="lapTotal">10</span></span>
+      <span class="lap-badge" id="lapLabelWrap"><span id="lapLabelText">Volta</span> <b id="lapNow">1</b>/<span id="lapTotal">10</span></span>
       <span class="lap-badge" id="stepCounter">passo 1/150</span>
     </div>
 
@@ -199,6 +207,7 @@
       <div class="conjugado" id="conjugado"></div>
 
       <div class="photo-wrap" id="photoWrap" style="display:none">
+        <video id="exVideo" autoplay muted loop playsinline style="display:none"></video>
         <img id="exPhoto" src="" alt="">
       </div>
       <div class="photo-caption" id="photoCaption" style="display:none"></div>
@@ -253,7 +262,7 @@ const CIRCUITS = [
     {name:'Cadeia posterior 2', mode:'time', value:30, velocidade:'Isométrico', descanso:30, next:'Cadeia posterior 3', img:2,
       obs:'Manter os dois pés para frente, estender os joelhos e afundar a lombar.'},
     {name:'Cadeia posterior 3', mode:'time', value:30, velocidade:'Isométrico', descanso:30, next:'Agachamento elevando os braços', img:3, obs:''},
-    {name:'Agachamento elevando os braços', mode:'reps', value:'10', velocidade:'Moderado', descanso:30, next:'Passada com rotação', img:4,
+    {name:'Agachamento elevando os braços', mode:'reps', value:'10', velocidade:'Moderado', descanso:30, next:'Passada com rotação', img:4, video:'videos/ab-agachamento-elevando-bracos.mp4',
       obs:'Planta dos pés inteiras no chão, joelhos para fora, "afunda a lombar", coluna reta, ombros para trás. Estender os cotovelos acima da cabeça.'},
     {name:'Passada com rotação', mode:'reps', value:'10', velocidade:'Moderado', descanso:30, next:'Superman', img:5,
       obs:'Planta do pé da frente inteira no chão, ponta do pé de trás. 10 rotações e depois segurar 10s elevando os braços.'},
@@ -269,24 +278,24 @@ const CIRCUITS = [
       obs:'Joelho da perna de apoio semi-flexionado, a outra perna estendida.'},
     {name:'Rotação com bastão ou elástico', mode:'reps', value:'10', velocidade:'Moderado', descanso:1, next:'Manguito — rotação externa (peso)', img:11,
       obs:'Pode fazer com bastão ou elástico.'},
-    {name:'Manguito — rotação externa (peso)', mode:'reps', value:'10', velocidade:'Moderado', descanso:1, next:'Elevação lateral isométrica c/ rotação', img:12,
+    {name:'Manguito — rotação externa (peso)', mode:'reps', value:'10', velocidade:'Moderado', descanso:1, next:'Elevação lateral isométrica c/ rotação', img:12, video:'videos/ab-manguito-rotacao-externa-peso.mp4',
       obs:'Cotovelo na altura do ombro, flexionado em 90°.'},
-    {name:'Elevação lateral isométrica com rotação', mode:'reps', value:'10', velocidade:'Moderado', descanso:1, next:'Manguito — rotação externa (elástico/cross)', img:13, obs:''},
+    {name:'Elevação lateral isométrica com rotação', mode:'reps', value:'10', velocidade:'Moderado', descanso:1, next:'Manguito — rotação externa (elástico/cross)', img:13, video:'videos/ab-elevacao-lateral-isometrica-rotacao.mp4', obs:''},
     {name:'Manguito — rotação externa (elástico/cross)', mode:'reps', value:'10', velocidade:'Moderado', descanso:1, next:'Manguito — rotação interna (elástico/cross)', img:14, obs:''},
     {name:'Manguito — rotação interna (elástico/cross)', mode:'reps', value:'10', velocidade:'Moderado', descanso:1, next:null, img:15, obs:''},
   ]},
   { key:'B', name:'Parte principal · 100 repetições', defaultLaps:10, exercises:[
-    {name:'Tall Plank Chops', mode:'time', value:40, velocidade:'Moderado', descanso:40, next:'Agachamento detalhado', img:16,
+    {name:'Tall Plank Chops', mode:'time', value:40, velocidade:'Moderado', descanso:40, next:'Agachamento detalhado', img:16, video:'videos/a-tall-plank-chops.mp4',
       obs:'Pode fazer os 40s de um lado só ou trocar o braço no meio do round.'},
-    {name:'Agachamento detalhado', mode:'time', value:40, velocidade:'Moderado', descanso:0, next:'Remada suspensa', img:17,
+    {name:'Agachamento detalhado', mode:'time', value:40, velocidade:'Moderado', descanso:0, next:'Remada suspensa', img:17, video:'videos/a-agachamento-detalhado.mp4',
       obs:'Moderar a velocidade de execução para realizar as 10 repetições em 40 segundos.'},
-    {name:'Remada suspensa', mode:'reps', value:'10', velocidade:'Moderado', descanso:40, next:'Tall Plank Chops', img:18,
+    {name:'Remada suspensa', mode:'reps', value:'10', velocidade:'Moderado', descanso:40, next:'Tall Plank Chops', img:18, video:'videos/a-remada-suspensa.mp4',
       obs:'Pode ser na fita suspensa ou na barra.'},
   ]},
   { key:'C', name:'Acessórios · antagonistas', defaultLaps:3, exercises:[
     {name:'Elevação lateral — dedão para baixo', mode:'reps', value:'8 a 12', velocidade:'Moderado', descanso:40, next:'Push press unilateral', img:19,
       obs:'Cotovelos mais altos que os punhos.'},
-    {name:'Push press unilateral (afastamento ântero-posterior)', mode:'reps', value:'8 a 10', velocidade:'Moderado', descanso:40, next:'Cadeira flexora', img:20,
+    {name:'Push press unilateral (afastamento ântero-posterior)', mode:'reps', value:'8 a 10', velocidade:'Moderado', descanso:40, next:'Cadeira flexora', img:20, video:'videos/a-push-press-unilateral.mp4',
       obs:'Mão que segura o peso contrária à perna da frente, coluna reta, core ativo, cotovelo fechado na extensão.'},
     {name:'Cadeira flexora', mode:'reps', value:'8 a 10', velocidade:'Moderado', descanso:40, next:'Elevação lateral — dedão para baixo', img:21,
       obs:'Pode ser substituída pela flexora na bola, revezando com os outros dois exercícios se necessário.'},
@@ -295,9 +304,12 @@ const CIRCUITS = [
 
 const LS_KEY = 'treinoA_progress_v1';
 const LS_LAPS = 'treinoA_laps_v1';
+const LS_MODE = 'treinoA_mainMode_v1';
+const MAIN_CIRCUIT_IDX = 1; // "Parte principal"
 
 /* ---------------- STATE ---------------- */
 let laps = JSON.parse(localStorage.getItem(LS_LAPS) || 'null') || CIRCUITS.map(c=>c.defaultLaps);
+let mainMode = localStorage.getItem(LS_MODE) || 'circuit'; // 'circuit' | 'isolated'
 let steps = [];       // flattened
 let stepIdx = 0;
 let timerHandle = null;
@@ -309,6 +321,17 @@ let audioCtx = null;
 function buildSteps(){
   steps = [];
   CIRCUITS.forEach((circuit, ci) => {
+    if(ci === MAIN_CIRCUIT_IDX && mainMode === 'isolated'){
+      // Isolated mode: finish all 5 series of one exercise before moving to the next
+      circuit.exercises.forEach((ex) => {
+        const seriesCount = 5;
+        for(let s=1; s<=seriesCount; s++){
+          steps.push({ circuitIdx:ci, circuitName:circuit.name, lap:s, totalLaps:seriesCount, phase:'work', ex, round:s, totalRounds:seriesCount, isolated:true });
+          steps.push({ circuitIdx:ci, circuitName:circuit.name, lap:s, totalLaps:seriesCount, phase:'rest', ex, seconds:60, round:s, totalRounds:seriesCount, isolated:true });
+        }
+      });
+      return;
+    }
     const totalLaps = laps[ci];
     for(let lap=1; lap<=totalLaps; lap++){
       circuit.exercises.forEach((ex) => {
@@ -352,6 +375,29 @@ document.querySelectorAll('.stepper button').forEach(btn=>{
   });
 });
 refreshLapsUI();
+
+function refreshMainMode(){
+  document.querySelectorAll('#mainModeToggle .mode-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.mode === mainMode);
+  });
+  const stepper = document.getElementById('mainStepper');
+  const desc = document.getElementById('mainBlockDesc');
+  if(mainMode === 'isolated'){
+    stepper.style.display = 'none';
+    desc.textContent = 'isolado — 5 séries de cada, uma de cada vez, 1min de descanso';
+  } else {
+    stepper.style.display = 'flex';
+    desc.textContent = 'circuito de 3 exercícios, 40s trabalho / 40s descanso';
+  }
+}
+document.querySelectorAll('#mainModeToggle .mode-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    mainMode = btn.dataset.mode;
+    localStorage.setItem(LS_MODE, mainMode);
+    refreshMainMode();
+  });
+});
+refreshMainMode();
 
 function checkResume(){
   const saved = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
@@ -407,6 +453,7 @@ function renderStep(){
   stage.classList.toggle('rest', s.phase === 'rest');
 
   document.getElementById('topCircuit').textContent = s.circuitName;
+  document.getElementById('lapLabelText').textContent = s.isolated ? 'Série' : 'Volta';
   document.getElementById('lapNow').textContent = s.lap;
   document.getElementById('lapTotal').textContent = s.totalLaps;
   document.getElementById('stepCounter').textContent = 'passo ' + (stepIdx+1) + '/' + steps.length;
@@ -418,12 +465,16 @@ function renderStep(){
   const mainBtn = document.getElementById('mainBtn');
   const photoWrap = document.getElementById('photoWrap');
   const exPhoto = document.getElementById('exPhoto');
+  const exVideo = document.getElementById('exVideo');
   const photoCaption = document.getElementById('photoCaption');
   mainBtn.classList.remove('rest-btn');
   photoWrap.classList.remove('preview');
   photoCaption.style.display = 'none';
 
   if(s.phase === 'rest'){
+    exVideo.pause();
+    exVideo.style.display = 'none';
+    exPhoto.style.display = 'block';
     document.getElementById('phaseTag').textContent = 'DESCANSO';
     document.getElementById('exName').textContent = 'Respira';
     document.getElementById('conjugado').innerHTML = 'Próximo: <b>' + (s.ex.next || 'fim do circuito') + '</b>';
@@ -452,8 +503,24 @@ function renderStep(){
     if(s.ex.obs){ obsBox.style.display = 'block'; obsBox.innerHTML = '<b>Técnica:</b> ' + s.ex.obs; }
     else { obsBox.style.display = 'none'; }
 
-    if(s.ex.img && EX_IMAGES[s.ex.img]){
+    exVideo.pause();
+    exVideo.removeAttribute('src');
+    exVideo.style.display = 'none';
+    exPhoto.style.display = 'none';
+    if(s.ex.video){
+      exVideo.src = s.ex.video;
+      exVideo.poster = (s.ex.img && EX_IMAGES[s.ex.img]) ? EX_IMAGES[s.ex.img] : '';
+      exVideo.style.display = 'block';
+      exVideo.load();
+      exVideo.play().catch(()=>{});
+      exVideo.onerror = () => {
+        exVideo.style.display = 'none';
+        if(s.ex.img && EX_IMAGES[s.ex.img]){ exPhoto.src = EX_IMAGES[s.ex.img]; exPhoto.style.display = 'block'; }
+      };
+      photoWrap.style.display = 'block';
+    } else if(s.ex.img && EX_IMAGES[s.ex.img]){
       exPhoto.src = EX_IMAGES[s.ex.img];
+      exPhoto.style.display = 'block';
       photoWrap.style.display = 'block';
     } else {
       photoWrap.style.display = 'none';
