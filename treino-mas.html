@@ -290,6 +290,24 @@ let timerHandle = null;
 let remaining = 0;
 let paused = false;
 let audioCtx = null;
+let wakeLock = null;
+
+async function requestWakeLock(){
+  try {
+    if('wakeLock' in navigator){
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    }
+  } catch(e){ wakeLock = null; }
+}
+function releaseWakeLock(){
+  if(wakeLock){ wakeLock.release().catch(()=>{}); wakeLock = null; }
+}
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && document.getElementById('player').classList.contains('active')){
+    requestWakeLock();
+  }
+});
 
 /* ---------------- BUILD STEPS ---------------- */
 function buildSteps(){
@@ -324,6 +342,25 @@ function beep(freq=880, dur=0.12){
     o.start(); o.stop(audioCtx.currentTime + dur);
   }catch(e){}
   if(navigator.vibrate) navigator.vibrate(40);
+}
+
+function chime(){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    const now = audioCtx.currentTime;
+    [[740,0], [988,0.11]].forEach(([freq, delay])=>{
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.frequency.value = freq;
+      o.type = 'sine';
+      g.gain.setValueAtTime(0.0001, now + delay);
+      g.gain.exponentialRampToValueAtTime(0.22, now + delay + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + delay + 0.22);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(now + delay); o.stop(now + delay + 0.24);
+    });
+  }catch(e){}
+  if(navigator.vibrate) navigator.vibrate([35,45,60]);
 }
 
 /* ---------------- HOME UI ---------------- */
@@ -380,6 +417,7 @@ function enterPlayer(){
   document.getElementById('home').classList.add('hidden');
   document.getElementById('done').classList.remove('active');
   document.getElementById('player').classList.add('active');
+  requestWakeLock();
   renderStep();
 }
 
@@ -499,7 +537,7 @@ function startTimer(total, isRest){
     remaining--;
     if(remaining <= 3 && remaining > 0) beep(660, 0.08);
     if(remaining <= 0){
-      beep(isRest ? 880 : 990, 0.2);
+      if(isRest){ chime(); } else { beep(990, 0.2); }
       clearTimer();
       advance();
       return;
@@ -540,6 +578,7 @@ document.getElementById('backBtn').addEventListener('click', goBack);
 document.getElementById('endBtn').addEventListener('click', ()=>{
   if(confirm('Encerrar o treino agora?')){
     clearTimer();
+    releaseWakeLock();
     localStorage.removeItem(LS_KEY);
     document.getElementById('player').classList.remove('active');
     document.getElementById('home').classList.remove('hidden');
@@ -549,6 +588,7 @@ document.getElementById('endBtn').addEventListener('click', ()=>{
 
 function finishWorkout(){
   clearTimer();
+  releaseWakeLock();
   localStorage.removeItem(LS_KEY);
   document.getElementById('player').classList.remove('active');
   document.getElementById('done').classList.add('active');

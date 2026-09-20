@@ -170,10 +170,14 @@
           <button data-c="1" data-d="1">+</button>
         </div>
       </div>
-      <div class="plan-row">
-        <div>
+      <div class="plan-row" id="accBlockRow">
+        <div style="width:100%">
           <div class="name">Acessórios — antagonistas (costas / posterior de coxa)</div>
           <div class="count">3 exercícios, pode isolado ou em circuito</div>
+          <div class="mode-toggle" id="accModeToggle">
+            <button class="mode-btn active" data-mode="circuit">Circuito</button>
+            <button class="mode-btn" data-mode="isolated">Isolado</button>
+          </div>
         </div>
         <div class="stepper">
           <button data-c="2" data-d="-1">–</button>
@@ -304,17 +308,38 @@ const CIRCUITS = [
 const LS_KEY = 'treinoB_progress_v1';
 const LS_LAPS = 'treinoB_laps_v1';
 const LS_MODE = 'treinoB_mainMode_v1';
+const LS_ACC_MODE = 'treinoB_accMode_v1';
 const MAIN_CIRCUIT_IDX = 1; // "Parte principal"
+const ACC_CIRCUIT_IDX = 2; // "Acessórios"
 
 /* ---------------- STATE ---------------- */
 let laps = JSON.parse(localStorage.getItem(LS_LAPS) || 'null') || CIRCUITS.map(c=>c.defaultLaps);
 let mainMode = localStorage.getItem(LS_MODE) || 'circuit'; // 'circuit' | 'isolated'
+let accMode = localStorage.getItem(LS_ACC_MODE) || 'circuit'; // 'circuit' | 'isolated'
 let steps = [];       // flattened
 let stepIdx = 0;
 let timerHandle = null;
 let remaining = 0;
 let paused = false;
 let audioCtx = null;
+let wakeLock = null;
+
+async function requestWakeLock(){
+  try {
+    if('wakeLock' in navigator){
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    }
+  } catch(e){ wakeLock = null; }
+}
+function releaseWakeLock(){
+  if(wakeLock){ wakeLock.release().catch(()=>{}); wakeLock = null; }
+}
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && document.getElementById('player').classList.contains('active')){
+    requestWakeLock();
+  }
+});
 
 /* ---------------- BUILD STEPS ---------------- */
 function buildSteps(){
@@ -326,6 +351,18 @@ function buildSteps(){
         for(let s=1; s<=seriesCount; s++){
           steps.push({ circuitIdx:ci, circuitName:circuit.name, lap:s, totalLaps:seriesCount, phase:'work', ex, round:s, totalRounds:seriesCount, isolated:true });
           steps.push({ circuitIdx:ci, circuitName:circuit.name, lap:s, totalLaps:seriesCount, phase:'rest', ex, seconds:60, round:s, totalRounds:seriesCount, isolated:true });
+        }
+      });
+      return;
+    }
+    if(ci === ACC_CIRCUIT_IDX && accMode === 'isolated'){
+      const seriesCount = laps[ci];
+      circuit.exercises.forEach((ex) => {
+        for(let s=1; s<=seriesCount; s++){
+          steps.push({ circuitIdx:ci, circuitName:circuit.name, lap:s, totalLaps:seriesCount, phase:'work', ex, round:s, totalRounds:seriesCount, isolated:true });
+          if(ex.descanso && ex.descanso > 2){
+            steps.push({ circuitIdx:ci, circuitName:circuit.name, lap:s, totalLaps:seriesCount, phase:'rest', ex, seconds:ex.descanso, round:s, totalRounds:seriesCount, isolated:true });
+          }
         }
       });
       return;
@@ -356,6 +393,25 @@ function beep(freq=880, dur=0.12){
     o.start(); o.stop(audioCtx.currentTime + dur);
   }catch(e){}
   if(navigator.vibrate) navigator.vibrate(40);
+}
+
+function chime(){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    const now = audioCtx.currentTime;
+    [[740,0], [988,0.11]].forEach(([freq, delay])=>{
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.frequency.value = freq;
+      o.type = 'sine';
+      g.gain.setValueAtTime(0.0001, now + delay);
+      g.gain.exponentialRampToValueAtTime(0.22, now + delay + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + delay + 0.22);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(now + delay); o.stop(now + delay + 0.24);
+    });
+  }catch(e){}
+  if(navigator.vibrate) navigator.vibrate([35,45,60]);
 }
 
 /* ---------------- HOME UI ---------------- */
@@ -397,6 +453,26 @@ document.querySelectorAll('#mainModeToggle .mode-btn').forEach(btn=>{
 });
 refreshMainMode();
 
+function refreshAccMode(){
+  document.querySelectorAll('#accModeToggle .mode-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.mode === accMode);
+  });
+  const desc = document.querySelector('#accBlockRow .count');
+  if(accMode === 'isolated'){
+    desc.textContent = 'isolado — termina as séries de um antes de ir pro próximo';
+  } else {
+    desc.textContent = 'circuito de 3 exercícios, revezando a cada série';
+  }
+}
+document.querySelectorAll('#accModeToggle .mode-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    accMode = btn.dataset.mode;
+    localStorage.setItem(LS_ACC_MODE, accMode);
+    refreshAccMode();
+  });
+});
+refreshAccMode();
+
 function checkResume(){
   const saved = JSON.parse(localStorage.getItem(LS_KEY) || 'null');
   if(saved && saved.stepIdx > 0){
@@ -435,6 +511,7 @@ function enterPlayer(){
   document.getElementById('home').classList.add('hidden');
   document.getElementById('done').classList.remove('active');
   document.getElementById('player').classList.add('active');
+  requestWakeLock();
   renderStep();
 }
 
@@ -554,7 +631,7 @@ function startTimer(total, isRest){
     remaining--;
     if(remaining <= 3 && remaining > 0) beep(660, 0.08);
     if(remaining <= 0){
-      beep(isRest ? 880 : 990, 0.2);
+      if(isRest){ chime(); } else { beep(990, 0.2); }
       clearTimer();
       advance();
       return;
@@ -595,6 +672,7 @@ document.getElementById('backBtn').addEventListener('click', goBack);
 document.getElementById('endBtn').addEventListener('click', ()=>{
   if(confirm('Encerrar o treino agora?')){
     clearTimer();
+    releaseWakeLock();
     localStorage.removeItem(LS_KEY);
     document.getElementById('player').classList.remove('active');
     document.getElementById('home').classList.remove('hidden');
@@ -604,6 +682,7 @@ document.getElementById('endBtn').addEventListener('click', ()=>{
 
 function finishWorkout(){
   clearTimer();
+  releaseWakeLock();
   localStorage.removeItem(LS_KEY);
   document.getElementById('player').classList.remove('active');
   document.getElementById('done').classList.add('active');
